@@ -29,10 +29,10 @@ func GetRandomMoney() int64 {
 	if max <= 0 {
 		// todo: return 0 or min_amount?
 		RainConfig.budget_remain -= RainConfig.snatch_config.min_amount
+		RainConfig.count_remain--
 		return RainConfig.snatch_config.min_amount
 	}
 	// 每个红包平均调度金额
-	// avgMax := max / RainConfig.budget_remain
 	avgMax := max / RainConfig.count_remain
 
 	// 根据平均调度金额来生成每个红包金额
@@ -50,6 +50,5 @@ func GetRandomMoney() int64 {
 
 	RainConfig.budget_remain -= money
 	RainConfig.count_remain--
-
 	return money
 }

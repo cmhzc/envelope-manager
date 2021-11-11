@@ -96,19 +96,26 @@ func reConfig() {
 }
 
 func produce() {
-	ch := make(chan int64, 100000)
+	ch := make(chan []interface{}, 1000)
 	wg := sync.WaitGroup{}
 	go func() {
 		for RainConfig.count_remain > 0 {
-			ch <- GetRandomMoney()
+			t := time.Now()
+			s := make([]interface{}, 500)
+			for count := 0; RainConfig.count_remain > 0 && count < 500; count++ {
+				s[count] = GetRandomMoney()
+			}
+			ch <- s
+			elapsed := time.Since(t)
+			log.Printf("[manager-produce] %s", elapsed)
 		}
 		close(ch)
 	}()
 	for i := 0; i < num_goroutines; i++ {
 		wg.Add(1)
 		go func() {
-			for amount := range ch {
-				if _, err := redis.Rdb.LPush("envelope_list", amount).Result(); err != nil {
+			for amounts := range ch {
+				if _, err := redis.Rdb.LPush("envelope_list", amounts...).Result(); err != nil {
 					log.Fatal("insert failed")
 				}
 			}
