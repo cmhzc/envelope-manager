@@ -18,10 +18,16 @@ func TestGetRandomMoney(t *testing.T) {
 	}
 
 	moneyArr := make([]int64, 0)
-	for RainConfig.count_remain > 0 {
+	amountOfEnvelope := 10
+	for amountOfEnvelope > 0 {
 		x := GetRandomMoney()
 		moneyArr = append(moneyArr, x)
+		amountOfEnvelope--
 	}
+	// for RainConfig.count_remain > 0 {
+	// 	x := GetRandomMoney()
+	// 	moneyArr = append(moneyArr, x)
+	// }
 
 	fmt.Println("分配的红包金额:")
 	fmt.Println(moneyArr)

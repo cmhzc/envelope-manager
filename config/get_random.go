@@ -32,7 +32,8 @@ func GetRandomMoney() int64 {
 		return RainConfig.snatch_config.min_amount
 	}
 	// 每个红包平均调度金额
-	avgMax := max / RainConfig.budget_remain
+	// avgMax := max / RainConfig.budget_remain
+	avgMax := max / RainConfig.count_remain
 
 	// 根据平均调度金额来生成每个红包金额
 	randNum := rand.Float64() - 0.5
