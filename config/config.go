@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
@@ -47,7 +48,10 @@ func InitRainConfig(name string) error {
 	watchConfig()
 
 	// produce envelopes
+	start := time.Now()
 	produce()
+	elapsed := time.Since(start)
+	log.Printf("[manager] produce took %s", elapsed)
 	return nil
 }
 
@@ -73,7 +77,10 @@ func watchConfig() {
 
 func reConfig() {
 	// retrieve envelopes
+	start := time.Now()
 	collect_amount, collect_count := consume()
+	elapsed := time.Since(start)
+	log.Printf("[manager] cosume took %s", elapsed)
 
 	// calculate remain amount and count
 	RainConfig.count_remain = collect_count
@@ -82,11 +89,15 @@ func reConfig() {
 	lastBudget = RainConfig.budget_remain
 
 	// regenerate envelopes
+	start = time.Now()
 	produce()
+	elapsed = time.Since(start)
+	log.Printf("[manager] produce took %s", elapsed)
 }
 
 func produce() {
-	ch := make(chan int64, 1000)
+	ch := make(chan int64, 100000)
+	wg := sync.WaitGroup{}
 	go func() {
 		for RainConfig.count_remain > 0 {
 			ch <- GetRandomMoney()
@@ -94,20 +105,21 @@ func produce() {
 		close(ch)
 	}()
 	for i := 0; i < num_goroutines; i++ {
+		wg.Add(1)
 		go func() {
 			for amount := range ch {
-				if n, err := redis.Rdb.LPush("envelope_list", amount).Result(); err != nil {
+				if _, err := redis.Rdb.LPush("envelope_list", amount).Result(); err != nil {
 					log.Fatal("insert failed")
-				} else {
-					log.Printf("insert success %v,the value is %v", n, amount)
 				}
 			}
+			wg.Done()
 		}()
 	}
+	wg.Wait()
 }
 
 func consume() (int64, int64) {
-	ch := make(chan int64, 1000)
+	ch := make(chan int64, 100000)
 	wg := sync.WaitGroup{}
 	for i := 0; i < num_goroutines; i++ {
 		wg.Add(1)
@@ -131,5 +143,6 @@ func consume() (int64, int64) {
 		collect_amount += amount
 		collect_count++
 	}
+	log.Printf("[manager]: collected %v envelopes with value of %v", collect_count, collect_amount)
 	return collect_amount, collect_count
 }
