@@ -100,14 +100,11 @@ func produce() {
 	wg := sync.WaitGroup{}
 	go func() {
 		for RainConfig.count_remain > 0 {
-			t := time.Now()
-			s := make([]interface{}, 500)
-			for count := 0; RainConfig.count_remain > 0 && count < 500; count++ {
+			s := make([]interface{}, 10000)
+			for count := 0; RainConfig.count_remain > 0 && count < 10000; count++ {
 				s[count] = GetRandomMoney()
 			}
 			ch <- s
-			elapsed := time.Since(t)
-			log.Printf("[manager-produce] %s", elapsed)
 		}
 		close(ch)
 	}()

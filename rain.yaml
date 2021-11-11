@@ -1,11 +1,11 @@
 rain:
-  budget: 200000000
-  count: 10000000
+  budget: 9000000000
+  count: 30000000
 
 snatch:
   probability: 0.5
-  min_amount: 20
-  max_amount: 2000
+  min_amount: 30
+  max_amount: 4000
 
 conc:
-  threads: 5
+  threads: 8
