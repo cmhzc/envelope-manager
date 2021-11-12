@@ -12,6 +12,7 @@ func initSeed() {
 func (RainConfig *rainConfig) GetRandomMoney() int64 {
 	money := int64(0)
 	if RainConfig.count_remain <= 0 || RainConfig.budget_remain <= 0 {
+		RainConfig.count_remain--
 		return 0
 	} else if RainConfig.count_remain == 1 {
 		if RainConfig.budget_remain > 0 {

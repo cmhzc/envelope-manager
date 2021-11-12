@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
@@ -44,8 +43,6 @@ func InitRainConfig(name string) error {
 	}
 	lastBudget = RainConfig.budget_remain
 	num_goroutines = viper.GetInt("conc.threads")
-	// start watching config file
-	watchConfig()
 
 	// produce envelopes
 	start := time.Now()
@@ -66,16 +63,7 @@ func initConfig(name string) error {
 	return nil
 }
 
-func watchConfig() {
-	viper.OnConfigChange(func(e fsnotify.Event) {
-		log.Println("[viper] Config file content changed:", e.Name)
-		// on config file content change, reconfig
-		reConfig()
-	})
-	viper.WatchConfig()
-}
-
-func reConfig() {
+func ReConfig(newBudget int64) {
 	// retrieve envelopes
 	start := time.Now()
 	collect_amount, collect_count := consume()
@@ -83,9 +71,9 @@ func reConfig() {
 	log.Printf("[manager] cosume took %s", elapsed)
 
 	// calculate remain amount and count
-	RainConfig.count_remain = collect_count
+	RainConfig.count_remain = collect_count + RainConfig.count_remain
 	// amount_new - amount_old + amount_collect + amount_left = new amount
-	RainConfig.budget_remain = viper.GetInt64("rain.budget") - lastBudget + collect_amount + RainConfig.budget_remain
+	RainConfig.budget_remain = newBudget - lastBudget + collect_amount + RainConfig.budget_remain
 	lastBudget = RainConfig.budget_remain
 	log.Printf("[manager] new config genreated: budget_remain %v, count_remain %v", RainConfig.budget_remain, RainConfig.count_remain)
 
@@ -100,12 +88,17 @@ func produce() {
 	ch := make(chan []interface{}, 1000)
 	wg := sync.WaitGroup{}
 	go func() {
-		for RainConfig.count_remain > 0 {
+		for RainConfig.count_remain > 0 && RainConfig.budget_remain > 0 {
 			s := make([]interface{}, 10000)
-			for count := 0; RainConfig.count_remain > 0 && count < 10000; count++ {
+			count := 0
+			for ; RainConfig.count_remain > 0 && RainConfig.budget_remain > 0 && count < 10000; count++ {
 				s[count] = RainConfig.GetRandomMoney()
 			}
-			ch <- s
+			if count < 10000 {
+				ch <- s[:count]
+			} else {
+				ch <- s
+			}
 		}
 		close(ch)
 	}()
@@ -154,6 +147,6 @@ func consume() (collect_amount int64, collect_count int64) {
 			collect_count++
 		}
 	}
-	log.Printf("[manager]: collected %v envelopes with value of %v", collect_count, collect_amount)
+	log.Printf("[manager] collected %v envelopes with value of %v", collect_count, collect_amount)
 	return collect_amount, collect_count
 }

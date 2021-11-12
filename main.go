@@ -4,7 +4,11 @@ import (
 	"envelope_manager/config"
 	"envelope_manager/redis"
 	"log"
+	"net/http"
 	"os"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -17,6 +21,24 @@ func main() {
 	// config init, produce envelopes
 	config.InitRainConfig(os.Getenv("CONFIG_NAME"))
 
-	// block the main goroutine
-	select {}
+	// config secret
+	secret := gin.Accounts{
+		os.Getenv("AUTH_USERNAME"): os.Getenv("AUTH_PASSWORD"),
+	}
+	// receive requests for reconfig
+	r := gin.Default()
+	r.POST("/reconfig", gin.BasicAuth(secret), func(c *gin.Context) {
+		newBudget, err := strconv.ParseInt(c.PostForm("newBudget"), 10, 64)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"status": "failed due to wrong input format",
+			})
+			return
+		}
+		config.ReConfig(newBudget)
+		c.JSON(http.StatusOK, gin.H{
+			"status": "succeeded",
+		})
+	})
+	r.Run()
 }
