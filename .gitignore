@@ -15,3 +15,5 @@
 # vendor/
 
 Dockerfile
+local.yaml
+envelope_manager

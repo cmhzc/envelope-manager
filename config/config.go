@@ -85,8 +85,9 @@ func reConfig() {
 	// calculate remain amount and count
 	RainConfig.count_remain = collect_count
 	// amount_new - amount_old + amount_collect + amount_left = new amount
-	RainConfig.budget_remain += viper.GetInt64("rain.budget") - lastBudget + collect_amount
+	RainConfig.budget_remain = viper.GetInt64("rain.budget") - lastBudget + collect_amount + RainConfig.budget_remain
 	lastBudget = RainConfig.budget_remain
+	log.Printf("[manager] new config genreated: budget_remain %v, count_remain %v", RainConfig.budget_remain, RainConfig.count_remain)
 
 	// regenerate envelopes
 	start = time.Now()
@@ -102,7 +103,7 @@ func produce() {
 		for RainConfig.count_remain > 0 {
 			s := make([]interface{}, 10000)
 			for count := 0; RainConfig.count_remain > 0 && count < 10000; count++ {
-				s[count] = GetRandomMoney()
+				s[count] = RainConfig.GetRandomMoney()
 			}
 			ch <- s
 		}
@@ -122,16 +123,21 @@ func produce() {
 	wg.Wait()
 }
 
-func consume() (int64, int64) {
-	ch := make(chan int64, 100000)
+func consume() (collect_amount int64, collect_count int64) {
+	ch := make(chan []string, 1000)
 	wg := sync.WaitGroup{}
 	for i := 0; i < num_goroutines; i++ {
 		wg.Add(1)
 		go func() {
-			for money, err := redis.Rdb.LPop("envelope_list").Result(); err == nil; {
-				amount, _ := strconv.ParseInt(money, 10, 64)
-				ch <- amount
-				money, err = redis.Rdb.LPop("envelope_list").Result()
+			for {
+				pipe := redis.Rdb.TxPipeline()
+				amounts := pipe.LRange("envelope_list", 0, 9999)
+				pipe.LTrim("envelope_list", 10000, -1).Result()
+				pipe.Exec()
+				if len(amounts.Val()) == 0 {
+					break
+				}
+				ch <- amounts.Val()
 			}
 			wg.Done()
 		}()
@@ -141,11 +147,12 @@ func consume() (int64, int64) {
 		close(ch)
 	}()
 
-	var collect_amount int64 = 0
-	var collect_count int64 = 0
-	for amount := range ch {
-		collect_amount += amount
-		collect_count++
+	for amounts := range ch {
+		for _, amount := range amounts {
+			money, _ := strconv.ParseInt(amount, 10, 64)
+			collect_amount += money
+			collect_count++
+		}
 	}
 	log.Printf("[manager]: collected %v envelopes with value of %v", collect_count, collect_amount)
 	return collect_amount, collect_count

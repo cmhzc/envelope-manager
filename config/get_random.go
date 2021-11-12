@@ -9,7 +9,7 @@ func initSeed() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-func GetRandomMoney() int64 {
+func (RainConfig *rainConfig) GetRandomMoney() int64 {
 	money := int64(0)
 	if RainConfig.count_remain <= 0 || RainConfig.budget_remain <= 0 {
 		return 0

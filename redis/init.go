@@ -16,5 +16,7 @@ func InitRedis() error {
 		PoolSize: 100,
 	})
 	_, err := Rdb.Ping().Result()
+	// DEL `node_id` key
+	Rdb.Del("node_id")
 	return err
 }
