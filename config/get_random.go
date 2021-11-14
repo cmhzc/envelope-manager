@@ -26,12 +26,12 @@ func (RainConfig *rainConfig) GetRandomMoney() int64 {
 	}
 
 	// 最大可调度金额
-	max := RainConfig.budget_remain - RainConfig.snatch_config.min_amount*RainConfig.count_remain
+	max := RainConfig.budget_remain - RainConfig.Snatch_config.min_amount*RainConfig.count_remain
 	if max <= 0 {
 		// todo: return 0 or min_amount?
-		RainConfig.budget_remain -= RainConfig.snatch_config.min_amount
+		RainConfig.budget_remain -= RainConfig.Snatch_config.min_amount
 		RainConfig.count_remain--
-		return RainConfig.snatch_config.min_amount
+		return RainConfig.Snatch_config.min_amount
 	}
 	// 每个红包平均调度金额
 	avgMax := max / RainConfig.count_remain
@@ -40,13 +40,13 @@ func (RainConfig *rainConfig) GetRandomMoney() int64 {
 	randNum := rand.Float64() - 0.5
 	avgMax += int64(randNum * float64(avgMax))
 
-	money = RainConfig.snatch_config.min_amount + avgMax
+	money = RainConfig.Snatch_config.min_amount + avgMax
 
 	// border clip
-	if money < RainConfig.snatch_config.min_amount {
-		money = RainConfig.snatch_config.min_amount
-	} else if money > RainConfig.snatch_config.max_amount {
-		money = RainConfig.snatch_config.max_amount
+	if money < RainConfig.Snatch_config.min_amount {
+		money = RainConfig.Snatch_config.min_amount
+	} else if money > RainConfig.Snatch_config.max_amount {
+		money = RainConfig.Snatch_config.max_amount
 	}
 
 	RainConfig.budget_remain -= money

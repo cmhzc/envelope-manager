@@ -2,6 +2,7 @@ package main
 
 import (
 	"envelope_manager/config"
+	"envelope_manager/dao"
 	"envelope_manager/redis"
 	"log"
 	"net/http"
@@ -12,6 +13,9 @@ import (
 )
 
 func main() {
+	// Flush MySQL DB
+	dao.FlushDB()
+
 	// Redis connection init
 	if err := redis.InitRedis(); err != nil {
 		log.Fatal("failed to connect to Redis")
@@ -20,6 +24,10 @@ func main() {
 
 	// config init, produce envelopes
 	config.InitRainConfig(os.Getenv("CONFIG_NAME"))
+	if err := redis.WriteProb(config.RainConfig.Snatch_config.Probability); err != nil {
+		panic("failed writing prob")
+	}
+	log.Printf("[manager] wrote to redis: prob %v", config.RainConfig.Snatch_config.Probability)
 
 	// config secret
 	secret := gin.Accounts{
