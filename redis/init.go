@@ -21,8 +21,11 @@ func InitRedis() error {
 	return err
 }
 
-func WriteProb(prob float64) error {
+func WriteProbMaxCount(prob float64, max_count int64) error {
 	if _, err := Rdb.IncrByFloat("prob", prob).Result(); err != nil {
+		return err
+	}
+	if _, err := Rdb.IncrBy("max_count", max_count).Result(); err != nil {
 		return err
 	}
 	return nil

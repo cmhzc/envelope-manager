@@ -15,6 +15,7 @@ type snatchConfig struct {
 	Probability float64
 	min_amount  int64
 	max_amount  int64
+	MaxCount    int64
 }
 
 type rainConfig struct {
@@ -39,6 +40,7 @@ func InitRainConfig(name string) error {
 			Probability: viper.GetFloat64("snatch.probability"),
 			min_amount:  viper.GetInt64("snatch.min_amount"),
 			max_amount:  viper.GetInt64("snatch.max_amount"),
+			MaxCount:    viper.GetInt64("snatch.max_count"),
 		},
 	}
 	lastBudget = RainConfig.budget_remain

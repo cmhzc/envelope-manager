@@ -15,19 +15,23 @@ import (
 func main() {
 	// Flush MySQL DB
 	dao.FlushDB()
+	log.Printf("[manager] flushed MySQL db")
 
 	// Redis connection init
 	if err := redis.InitRedis(); err != nil {
-		log.Fatal("failed to connect to Redis")
+		panic("failed to connect to Redis")
 	}
 	defer redis.Rdb.Close()
 
 	// config init, produce envelopes
 	config.InitRainConfig(os.Getenv("CONFIG_NAME"))
-	if err := redis.WriteProb(config.RainConfig.Snatch_config.Probability); err != nil {
-		panic("failed writing prob")
+	if err := redis.WriteProbMaxCount(config.RainConfig.Snatch_config.Probability, config.RainConfig.Snatch_config.MaxCount); err != nil {
+		panic("failed writing prob and max_count")
 	}
-	log.Printf("[manager] wrote to redis: prob %v", config.RainConfig.Snatch_config.Probability)
+	log.Printf("[manager] wrote to redis: prob %v, max_count: %v",
+		config.RainConfig.Snatch_config.Probability,
+		config.RainConfig.Snatch_config.MaxCount,
+	)
 
 	// config secret
 	secret := gin.Accounts{
