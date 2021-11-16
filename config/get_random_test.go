@@ -9,8 +9,8 @@ func TestGetRandomMoney(t *testing.T) {
 	RainConfig = &rainConfig{
 		budget_remain: 100000000,
 		count_remain:  100000,
-		snatch_config: &snatchConfig{
-			probability: 0.6,
+		Snatch_config: &snatchConfig{
+			Probability: 0.6,
 			min_amount:  100,
 			max_amount:  5000,
 		},

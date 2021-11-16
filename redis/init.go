@@ -16,7 +16,17 @@ func InitRedis() error {
 		PoolSize: 100,
 	})
 	_, err := Rdb.Ping().Result()
-	// DEL `node_id` key
-	Rdb.Del("node_id")
+	// FlushDB
+	Rdb.FlushDB()
 	return err
+}
+
+func WriteProbMaxCount(prob float64, max_count int64) error {
+	if _, err := Rdb.IncrByFloat("prob", prob).Result(); err != nil {
+		return err
+	}
+	if _, err := Rdb.IncrBy("max_count", max_count).Result(); err != nil {
+		return err
+	}
+	return nil
 }
